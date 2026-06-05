@@ -1,0 +1,150 @@
+^C:\MCBEMOD\TSUKUYOMI\BUILD\_DEPS\MINHOOK-SUBBUILD\CMAKEFILES\611A97FD80437547E868505F86CFAF1C\MINHOOK-POPULATE-MKDIR.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -Dcfgdir=/Debug -P C:/MCBEMOD/Tsukuyomi/build/_deps/minhook-subbuild/minhook-populate-prefix/tmp/minhook-populate-mkdirs.cmake
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E touch C:/MCBEMOD/Tsukuyomi/build/_deps/minhook-subbuild/minhook-populate-prefix/src/minhook-populate-stamp/Debug/minhook-populate-mkdir
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\MCBEMOD\TSUKUYOMI\BUILD\_DEPS\MINHOOK-SUBBUILD\CMAKEFILES\611A97FD80437547E868505F86CFAF1C\MINHOOK-POPULATE-DOWNLOAD.RULE
+setlocal
+cd C:\MCBEMOD\Tsukuyomi\build\_deps
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -P C:/MCBEMOD/Tsukuyomi/build/_deps/minhook-subbuild/minhook-populate-prefix/tmp/minhook-populate-gitclone.cmake
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E touch C:/MCBEMOD/Tsukuyomi/build/_deps/minhook-subbuild/minhook-populate-prefix/src/minhook-populate-stamp/Debug/minhook-populate-download
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\MCBEMOD\TSUKUYOMI\BUILD\_DEPS\MINHOOK-SUBBUILD\CMAKEFILES\611A97FD80437547E868505F86CFAF1C\MINHOOK-POPULATE-UPDATE.RULE
+setlocal
+cd C:\MCBEMOD\Tsukuyomi\build\_deps\minhook-src
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -Dcan_fetch=YES -P C:/MCBEMOD/Tsukuyomi/build/_deps/minhook-subbuild/minhook-populate-prefix/tmp/minhook-populate-gitupdate.cmake
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\MCBEMOD\TSUKUYOMI\BUILD\_DEPS\MINHOOK-SUBBUILD\CMAKEFILES\611A97FD80437547E868505F86CFAF1C\MINHOOK-POPULATE-PATCH.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E echo_append
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E touch C:/MCBEMOD/Tsukuyomi/build/_deps/minhook-subbuild/minhook-populate-prefix/src/minhook-populate-stamp/Debug/minhook-populate-patch
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\MCBEMOD\TSUKUYOMI\BUILD\_DEPS\MINHOOK-SUBBUILD\CMAKEFILES\611A97FD80437547E868505F86CFAF1C\MINHOOK-POPULATE-CONFIGURE.RULE
+setlocal
+cd C:\MCBEMOD\Tsukuyomi\build\_deps\minhook-build
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E echo_append
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E touch C:/MCBEMOD/Tsukuyomi/build/_deps/minhook-subbuild/minhook-populate-prefix/src/minhook-populate-stamp/Debug/minhook-populate-configure
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\MCBEMOD\TSUKUYOMI\BUILD\_DEPS\MINHOOK-SUBBUILD\CMAKEFILES\611A97FD80437547E868505F86CFAF1C\MINHOOK-POPULATE-BUILD.RULE
+setlocal
+cd C:\MCBEMOD\Tsukuyomi\build\_deps\minhook-build
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E echo_append
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E touch C:/MCBEMOD/Tsukuyomi/build/_deps/minhook-subbuild/minhook-populate-prefix/src/minhook-populate-stamp/Debug/minhook-populate-build
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\MCBEMOD\TSUKUYOMI\BUILD\_DEPS\MINHOOK-SUBBUILD\CMAKEFILES\611A97FD80437547E868505F86CFAF1C\MINHOOK-POPULATE-INSTALL.RULE
+setlocal
+cd C:\MCBEMOD\Tsukuyomi\build\_deps\minhook-build
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E echo_append
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E touch C:/MCBEMOD/Tsukuyomi/build/_deps/minhook-subbuild/minhook-populate-prefix/src/minhook-populate-stamp/Debug/minhook-populate-install
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\MCBEMOD\TSUKUYOMI\BUILD\_DEPS\MINHOOK-SUBBUILD\CMAKEFILES\611A97FD80437547E868505F86CFAF1C\MINHOOK-POPULATE-TEST.RULE
+setlocal
+cd C:\MCBEMOD\Tsukuyomi\build\_deps\minhook-build
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E echo_append
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E touch C:/MCBEMOD/Tsukuyomi/build/_deps/minhook-subbuild/minhook-populate-prefix/src/minhook-populate-stamp/Debug/minhook-populate-test
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\MCBEMOD\TSUKUYOMI\BUILD\_DEPS\MINHOOK-SUBBUILD\CMAKEFILES\2C51FD4D561F3386ED1E8786B0466245\MINHOOK-POPULATE-COMPLETE.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/MCBEMOD/Tsukuyomi/build/_deps/minhook-subbuild/CMakeFiles/Debug
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E touch C:/MCBEMOD/Tsukuyomi/build/_deps/minhook-subbuild/CMakeFiles/Debug/minhook-populate-complete
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E touch C:/MCBEMOD/Tsukuyomi/build/_deps/minhook-subbuild/minhook-populate-prefix/src/minhook-populate-stamp/Debug/minhook-populate-done
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\MCBEMOD\TSUKUYOMI\BUILD\_DEPS\MINHOOK-SUBBUILD\CMAKEFILES\8AAB43B177339D93463FB33F85BAD252\MINHOOK-POPULATE.RULE
+setlocal
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\MCBEMOD\TSUKUYOMI\BUILD\_DEPS\MINHOOK-SUBBUILD\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/MCBEMOD/Tsukuyomi/build/_deps/minhook-subbuild -BC:/MCBEMOD/Tsukuyomi/build/_deps/minhook-subbuild --check-stamp-file C:/MCBEMOD/Tsukuyomi/build/_deps/minhook-subbuild/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

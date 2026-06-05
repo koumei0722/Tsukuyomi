@@ -1,0 +1,150 @@
+^C:\MCBEMOD\TSUKUYOMI\BUILD\_DEPS\JSON-SUBBUILD\CMAKEFILES\8A86163C64A681A150E427C89917DDDC\JSON-POPULATE-MKDIR.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -Dcfgdir=/Debug -P C:/MCBEMOD/Tsukuyomi/build/_deps/json-subbuild/json-populate-prefix/tmp/json-populate-mkdirs.cmake
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E touch C:/MCBEMOD/Tsukuyomi/build/_deps/json-subbuild/json-populate-prefix/src/json-populate-stamp/Debug/json-populate-mkdir
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\MCBEMOD\TSUKUYOMI\BUILD\_DEPS\JSON-SUBBUILD\CMAKEFILES\8A86163C64A681A150E427C89917DDDC\JSON-POPULATE-DOWNLOAD.RULE
+setlocal
+cd C:\MCBEMOD\Tsukuyomi\build\_deps
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -P C:/MCBEMOD/Tsukuyomi/build/_deps/json-subbuild/json-populate-prefix/tmp/json-populate-gitclone.cmake
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E touch C:/MCBEMOD/Tsukuyomi/build/_deps/json-subbuild/json-populate-prefix/src/json-populate-stamp/Debug/json-populate-download
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\MCBEMOD\TSUKUYOMI\BUILD\_DEPS\JSON-SUBBUILD\CMAKEFILES\8A86163C64A681A150E427C89917DDDC\JSON-POPULATE-UPDATE.RULE
+setlocal
+cd C:\MCBEMOD\Tsukuyomi\build\_deps\json-src
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -Dcan_fetch=YES -P C:/MCBEMOD/Tsukuyomi/build/_deps/json-subbuild/json-populate-prefix/tmp/json-populate-gitupdate.cmake
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\MCBEMOD\TSUKUYOMI\BUILD\_DEPS\JSON-SUBBUILD\CMAKEFILES\8A86163C64A681A150E427C89917DDDC\JSON-POPULATE-PATCH.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E echo_append
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E touch C:/MCBEMOD/Tsukuyomi/build/_deps/json-subbuild/json-populate-prefix/src/json-populate-stamp/Debug/json-populate-patch
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\MCBEMOD\TSUKUYOMI\BUILD\_DEPS\JSON-SUBBUILD\CMAKEFILES\8A86163C64A681A150E427C89917DDDC\JSON-POPULATE-CONFIGURE.RULE
+setlocal
+cd C:\MCBEMOD\Tsukuyomi\build\_deps\json-build
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E echo_append
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E touch C:/MCBEMOD/Tsukuyomi/build/_deps/json-subbuild/json-populate-prefix/src/json-populate-stamp/Debug/json-populate-configure
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\MCBEMOD\TSUKUYOMI\BUILD\_DEPS\JSON-SUBBUILD\CMAKEFILES\8A86163C64A681A150E427C89917DDDC\JSON-POPULATE-BUILD.RULE
+setlocal
+cd C:\MCBEMOD\Tsukuyomi\build\_deps\json-build
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E echo_append
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E touch C:/MCBEMOD/Tsukuyomi/build/_deps/json-subbuild/json-populate-prefix/src/json-populate-stamp/Debug/json-populate-build
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\MCBEMOD\TSUKUYOMI\BUILD\_DEPS\JSON-SUBBUILD\CMAKEFILES\8A86163C64A681A150E427C89917DDDC\JSON-POPULATE-INSTALL.RULE
+setlocal
+cd C:\MCBEMOD\Tsukuyomi\build\_deps\json-build
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E echo_append
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E touch C:/MCBEMOD/Tsukuyomi/build/_deps/json-subbuild/json-populate-prefix/src/json-populate-stamp/Debug/json-populate-install
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\MCBEMOD\TSUKUYOMI\BUILD\_DEPS\JSON-SUBBUILD\CMAKEFILES\8A86163C64A681A150E427C89917DDDC\JSON-POPULATE-TEST.RULE
+setlocal
+cd C:\MCBEMOD\Tsukuyomi\build\_deps\json-build
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E echo_append
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E touch C:/MCBEMOD/Tsukuyomi/build/_deps/json-subbuild/json-populate-prefix/src/json-populate-stamp/Debug/json-populate-test
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\MCBEMOD\TSUKUYOMI\BUILD\_DEPS\JSON-SUBBUILD\CMAKEFILES\E0D0457E259DE0CF8A915A9D07E623C7\JSON-POPULATE-COMPLETE.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/MCBEMOD/Tsukuyomi/build/_deps/json-subbuild/CMakeFiles/Debug
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E touch C:/MCBEMOD/Tsukuyomi/build/_deps/json-subbuild/CMakeFiles/Debug/json-populate-complete
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E touch C:/MCBEMOD/Tsukuyomi/build/_deps/json-subbuild/json-populate-prefix/src/json-populate-stamp/Debug/json-populate-done
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\MCBEMOD\TSUKUYOMI\BUILD\_DEPS\JSON-SUBBUILD\CMAKEFILES\3F28435BFAF373448E0E8E2E56A4AE58\JSON-POPULATE.RULE
+setlocal
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\MCBEMOD\TSUKUYOMI\BUILD\_DEPS\JSON-SUBBUILD\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/MCBEMOD/Tsukuyomi/build/_deps/json-subbuild -BC:/MCBEMOD/Tsukuyomi/build/_deps/json-subbuild --check-stamp-file C:/MCBEMOD/Tsukuyomi/build/_deps/json-subbuild/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

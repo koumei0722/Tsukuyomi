@@ -1,0 +1,20 @@
+# CMake build directories
+/build/
+/out/
+
+# IDE settings
+/.vs/
+/.idea/
+/*.user
+/CMakeSettings.json
+/cmake-build-*/
+
+# Project specific run-time outputs / configs
+/Tsukuyomi/
+/bin/
+
+# Temporary / OS files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store

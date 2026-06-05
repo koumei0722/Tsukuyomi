@@ -1,0 +1,15 @@
+C:/MCBEMOD/Tsukuyomi/build/CMakeFiles/Tsukuyomi.dir
+C:/MCBEMOD/Tsukuyomi/build/CMakeFiles/INSTALL.dir
+C:/MCBEMOD/Tsukuyomi/build/CMakeFiles/ALL_BUILD.dir
+C:/MCBEMOD/Tsukuyomi/build/CMakeFiles/ZERO_CHECK.dir
+C:/MCBEMOD/Tsukuyomi/build/_deps/libhat-build/CMakeFiles/libhat.dir
+C:/MCBEMOD/Tsukuyomi/build/_deps/libhat-build/CMakeFiles/INSTALL.dir
+C:/MCBEMOD/Tsukuyomi/build/_deps/libhat-build/CMakeFiles/ALL_BUILD.dir
+C:/MCBEMOD/Tsukuyomi/build/_deps/minhook-build/CMakeFiles/minhook.dir
+C:/MCBEMOD/Tsukuyomi/build/_deps/minhook-build/CMakeFiles/INSTALL.dir
+C:/MCBEMOD/Tsukuyomi/build/_deps/minhook-build/CMakeFiles/ALL_BUILD.dir
+C:/MCBEMOD/Tsukuyomi/build/_deps/json-build/CMakeFiles/INSTALL.dir
+C:/MCBEMOD/Tsukuyomi/build/_deps/json-build/CMakeFiles/ALL_BUILD.dir
+C:/MCBEMOD/Tsukuyomi/build/_deps/glm-build/CMakeFiles/INSTALL.dir
+C:/MCBEMOD/Tsukuyomi/build/_deps/glm-build/CMakeFiles/ALL_BUILD.dir
+C:/MCBEMOD/Tsukuyomi/build/_deps/glm-build/glm/CMakeFiles/INSTALL.dir

@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\MCBEMOD\Tsukuyomi\build\_deps\glm-subbuild\CMakeFiles\edd7b81a6d4289e78def79a96b1aec79\glm-populate-mkdir.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\MCBEMOD\Tsukuyomi\build\_deps\glm-subbuild\CMakeFiles\edd7b81a6d4289e78def79a96b1aec79\glm-populate-download.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\MCBEMOD\Tsukuyomi\build\_deps\glm-subbuild\CMakeFiles\edd7b81a6d4289e78def79a96b1aec79\glm-populate-update.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\MCBEMOD\Tsukuyomi\build\_deps\glm-subbuild\CMakeFiles\edd7b81a6d4289e78def79a96b1aec79\glm-populate-patch.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\MCBEMOD\Tsukuyomi\build\_deps\glm-subbuild\CMakeFiles\edd7b81a6d4289e78def79a96b1aec79\glm-populate-configure.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\MCBEMOD\Tsukuyomi\build\_deps\glm-subbuild\CMakeFiles\edd7b81a6d4289e78def79a96b1aec79\glm-populate-build.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\MCBEMOD\Tsukuyomi\build\_deps\glm-subbuild\CMakeFiles\edd7b81a6d4289e78def79a96b1aec79\glm-populate-install.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\MCBEMOD\Tsukuyomi\build\_deps\glm-subbuild\CMakeFiles\edd7b81a6d4289e78def79a96b1aec79\glm-populate-test.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\MCBEMOD\Tsukuyomi\build\_deps\glm-subbuild\CMakeFiles\4076f05782dd7e109b172880c52e60ed\glm-populate-complete.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\MCBEMOD\Tsukuyomi\build\_deps\glm-subbuild\CMakeFiles\e40467e25b20d663803af6844d3fc522\glm-populate.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\MCBEMOD\Tsukuyomi\build\_deps\glm-subbuild\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\MCBEMOD\Tsukuyomi\build\_deps\glm-subbuild\CMakeFiles\glm-populate" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{E42FF194-5D4C-373E-8D8D-DC6F3706D94D}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

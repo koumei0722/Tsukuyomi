@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\MCBEMOD\Tsukuyomi\build\_deps\json-subbuild\CMakeFiles\3f28435bfaf373448e0e8e2e56a4ae58\generate.stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{B9F3BE9A-EF91-343F-8F24-3174E4E00FF5}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
