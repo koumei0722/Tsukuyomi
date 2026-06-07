@@ -7,6 +7,7 @@
 #include "modules/creativeNoClip.h"
 #include "modules/AntiDarkness.h"
 #include "modules/SchematicControl.h"
+#include "modules/FastBlockPlacement.h"
 
 bool shouldExit = false;
 
@@ -29,6 +30,7 @@ DWORD WINAPI MainThread(LPVOID lpParam) {
         SetCreativeNoClipEnabled(GetCreativeNoClipEnabled());
         SetAntiDarknessEnabled(GetAntiDarknessEnabled());
         SetSchematicControlEnabled(GetSchematicControlEnabled());
+        SetFastBlockPlacementEnabled(GetFastBlockPlacementEnabled());
     }
 
     while (!shouldExit) {

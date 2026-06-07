@@ -9,7 +9,8 @@ static float g_camX = 0.0f;
 static float g_camY = 0.0f;
 static float g_camZ = 0.0f;
 static float g_speed = 0.015625f; // デフォルト移動速度
-static float* g_yawPtr = nullptr;
+static PlayerView* g_playerView = nullptr;
+
 static bool g_initialized = false;
 static bool g_enabled = false;
 
@@ -69,8 +70,8 @@ void SetFreeCameraEnabled(bool enabled) {
     VirtualProtect(g_addrCameraUpdate + 11, 15, oldProtect, &oldProtect);
 }
 
-void SetFreeCameraYawPtr(float* yawPtr) {
-    g_yawPtr = yawPtr;
+void SetPlayerViewPtr(PlayerView* viewPtr) {
+    g_playerView = viewPtr;
 }
 
 void UpdateFreeCameraPosition(void* cameraBase) {
@@ -91,8 +92,8 @@ void UpdateFreeCameraPosition(void* cameraBase) {
         float currentSpeed = (GetAsyncKeyState(VK_LCONTROL) & 0x8000) ? g_speed * 2.0f : g_speed;
 
         // 視線方向（Yaw）を考慮した水平移動の計算
-        if (g_yawPtr) {
-            float yaw = *g_yawPtr;
+        if (g_playerView) {
+            float yaw = g_playerView->yaw;
             float yawOffset = getYawOffset();
 
             if (yawOffset < 360.0f) {
@@ -119,4 +120,8 @@ float GetFreeCameraSpeed() {
 
 void SetFreeCameraSpeed(float speed) {
     g_speed = speed;
+}
+
+PlayerView* GetPlayerViewPtr() {
+    return g_playerView;
 }

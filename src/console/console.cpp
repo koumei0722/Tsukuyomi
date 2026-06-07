@@ -9,6 +9,8 @@
 #include "modules/creativeNoClip.h"
 #include "modules/AntiDarkness.h"
 #include "modules/SchematicControl.h"
+#include "modules/FastBlockPlacement.h"
+#include "modules/Scaffold.h"
 #include <richedit.h>
 
 #define WM_USER_ADD_LOG (WM_USER + 100)
@@ -22,22 +24,19 @@ WNDPROC g_fnOldLogProc = NULL;
 
 std::vector<int> g_openConsoleKeys = { 'Y' }; // 初期値は 'Y' キー
 std::vector<int> g_freeCameraKeys = { VK_F5 };  // デフォルトのFreeCameraトグルキー
+std::vector<int> g_fastBlockPlacementKeys = {};  // デフォルトのFastBlockPlacementトグルキー
+std::vector<int> g_scaffoldKeys = {};            // デフォルトのScaffoldトグルキー
 bool g_isWaitingForKeyBind = false;
 KeyBindTarget g_keyBindTarget = KeyBindTarget::Console;
 
-bool g_isWaitingForSpeedInput = false; // 速度の数値入力中か
-std::wstring g_speedInputBuffer = L""; // 入力中の速度文字列
-DWORD g_lastSpeedInputStartTime = 0;   // 速度入力開始時のタイムスタンプ。実装理由：メッセージキューの残存Enterキーによる即時確定を防止するため。
-bool g_isFirstSpeedInputChar = false;  // 速度入力開始後, 最初の文字入力かどうか。実装理由：現在の速度を表示しつつ, 数字入力時に自動でクリアして上書きできるようにするため。
-
-// キーバインド設定完了時のタイムスタンプを保持する変数。
-// 実装理由：設定完了時にキーを離した瞬間の残存メッセージによるメニュー再選択の誤動作を防ぐため。
+NumberInputTarget g_numberInputTarget = NumberInputTarget::None;
+std::wstring g_numberInputBuffer = L"";
+DWORD g_lastNumberInputStartTime = 0;
+bool g_isFirstNumberInputChar = false;
 DWORD g_lastBindTime = 0;
 
-struct MenuNode {
-    std::wstring name;
-    std::vector<MenuNode> children;
-};
+
+
 
 MenuNode g_menuTree;
 std::vector<MenuNode*> g_menuStack;
@@ -45,95 +44,25 @@ int g_selectedIndex = 0;
 std::vector<int> g_menuIndexStack; // メニュー階層移動時に元のカーソル位置を復帰させるためのインデックス履歴スタック。実装理由：「..」で親階層に戻った際、サブメニューに入る前のカーソル位置を正確に復元するため。
 
 MenuNode* g_keyBindNode = nullptr;          // Consoleキーのメニューノードへの参照
+MenuNode* g_freeCameraNode = nullptr;       // FreeCameraトグルのメニューノードへの参照
 MenuNode* g_freeCameraKeyNode = nullptr;    // FreeCameraキーのメニューノードへの参照
 MenuNode* g_freeCameraSpeedNode = nullptr;  // FreeCamera速度のメニューノードへの参照
 MenuNode* g_creativeNoClipNode = nullptr;   // creativeNoClipのメニューノードへの参照
 MenuNode* g_antiDarknessNode = nullptr;     // AntiDarknessのメニューノードへの参照
 MenuNode* g_schematicControlNode = nullptr; // SchematicControlのメニューノードへの参照
+MenuNode* g_fastBlockPlacementNode = nullptr; // FastBlockPlacementのメニューノードへの参照
+MenuNode* g_fastBlockPlacementKeyNode = nullptr; // FastBlockPlacementキーのメニューノードへの参照
 
-// 仮想キーコードのテキスト変換
-std::wstring GetKeyName(int vk) {
-    switch (vk) {
-    case VK_SPACE: return L"SPACE";
-    case VK_RETURN: return L"ENTER";
-    case VK_ESCAPE: return L"ESC";
-    case VK_INSERT: return L"INSERT";
-    case VK_DELETE: return L"DELETE";
-    case VK_END: return L"END";
-    case VK_HOME: return L"HOME";
-    case VK_PRIOR: return L"PAGE UP";
-    case VK_NEXT: return L"PAGE DOWN";
-    case VK_UP: return L"UP";
-    case VK_DOWN: return L"DOWN";
-    case VK_LEFT: return L"LEFT";
-    case VK_RIGHT: return L"RIGHT";
-    case VK_LCONTROL: case VK_RCONTROL: case VK_CONTROL: return L"CTRL";
-    case VK_LSHIFT: case VK_RSHIFT: case VK_SHIFT: return L"SHIFT";
-    case VK_LMENU: case VK_RMENU: case VK_MENU: return L"ALT";
-    }
+MenuNode* g_fastPlacementModeNode = nullptr;  // FastBlockPlacementモードのメニューノードへの参照
+MenuNode* g_fastPlacementDistanceNode = nullptr; // FastBlockPlacement距離のメニューノードへの参照
+MenuNode* g_scaffoldNode = nullptr;           // Scaffoldのメニューノードへの参照
+MenuNode* g_scaffoldKeyNode = nullptr;        // Scaffoldキーのメニューノードへの参照
 
-    if (vk >= VK_F1 && vk <= VK_F24) {
-        return L"F" + std::to_wstring(vk - VK_F1 + 1);
-    }
+// ---------------------------------------------------------
+// 共通ユーティリティ定義
+// ---------------------------------------------------------
 
-    wchar_t name[128] = { 0 };
-    UINT scanCode = MapVirtualKeyW(vk, MAPVK_VK_TO_VSC);
-    LONG lParamValue = scanCode << 16;
 
-    switch (vk) {
-    case VK_INSERT: case VK_DELETE: case VK_HOME: case VK_END:
-    case VK_PRIOR: case VK_NEXT: case VK_UP: case VK_DOWN:
-    case VK_LEFT: case VK_RIGHT: case VK_RMENU: case VK_RCONTROL:
-        lParamValue |= 0x01000000;
-        break;
-    }
-
-    if (GetKeyNameTextW(lParamValue, name, 128) > 0) {
-        return name;
-    }
-
-    if (vk >= 'A' && vk <= 'Z') {
-        return std::wstring(1, (wchar_t)vk);
-    }
-    if (vk >= '0' && vk <= '9') {
-        return std::wstring(1, (wchar_t)vk);
-    }
-
-    return L"VK_" + std::to_wstring(vk);
-}
-
-// 現在のキーバインド設定から表示用の文字列を構築する関数
-std::wstring GetKeybindMenuName() {
-    if (g_openConsoleKeys.empty()) return L"Key: None";
-    std::wstring name = L"Key: ";
-    for (size_t i = 0; i < g_openConsoleKeys.size(); ++i) {
-        if (i > 0) name += L" + ";
-        name += GetKeyName(g_openConsoleKeys[i]);
-    }
-    return name;
-}
-
-// FreeCamera用のキーバインド表示文字列を構築する関数
-std::wstring GetFreeCameraKeyMenuName() {
-    if (g_freeCameraKeys.empty()) return L"Key: None";
-    std::wstring name = L"Key: ";
-    for (size_t i = 0; i < g_freeCameraKeys.size(); ++i) {
-        if (i > 0) name += L" + ";
-        name += GetKeyName(g_freeCameraKeys[i]);
-    }
-    return name;
-}
-
-std::wstring GetFreeCameraSpeedMenuName() {
-    // 現在のFreeCameraの移動速度を文字列表記にして取得します。
-    wchar_t buf[64];
-    swprintf_s(buf, L"Speed: %.5f", GetFreeCameraSpeed());
-    return buf;
-}
-
-std::wstring GetCreativeNoClipMenuName() {
-    return GetCreativeNoClipEnabled() ? L"Toggle: [ON]" : L"Toggle: [OFF]";
-}
 
 std::wstring GetConfigDir() {
     wchar_t exePath[MAX_PATH];
@@ -146,214 +75,7 @@ std::wstring GetConfigDir() {
     return exeDir + L"\\Tsukuyomi";
 }
 
-std::wstring GetKeybindConfigPath() {
-    return GetConfigDir() + L"\\Keybinds.json";
-}
 
-std::wstring GetFreeCameraConfigPath() {
-    return GetConfigDir() + L"\\FreeCamera.json";
-}
-
-// creativeNoClip用の設定ファイルの保存先パスを取得します。
-// 実装理由：キーバインド設定等とは独立した専用の設定ファイルとして保存するため。
-std::wstring GetCreativeNoClipConfigPath() {
-    return GetConfigDir() + L"\\creativeNoClip.json";
-}
-
-void SaveCreativeNoClipConfig() {
-    std::wstring folderPath = GetConfigDir();
-    CreateDirectoryW(folderPath.c_str(), NULL);
-
-    nlohmann::json j;
-    j["enabled"] = GetCreativeNoClipEnabled();
-
-    std::ofstream file(GetCreativeNoClipConfigPath());
-    if (file.is_open()) {
-        file << j.dump(4);
-        file.close();
-    }
-}
-
-void LoadCreativeNoClipConfig() {
-    std::wstring filePath = GetCreativeNoClipConfigPath();
-    std::ifstream file(filePath);
-    if (file.is_open()) {
-        try {
-            nlohmann::json j;
-            file >> j;
-            if (j.contains("enabled") && j["enabled"].is_boolean()) {
-                SetCreativeNoClipEnabled(j["enabled"].get<bool>());
-            }
-            file.close();
-        } catch (...) {}
-    }
-}
-
-// AntiDarkness用の設定ファイルの保存先パスを取得します。
-// 実装理由：キーバインド設定等とは独立した専用の設定ファイルとして保存するため。
-std::wstring GetAntiDarknessConfigPath() {
-    return GetConfigDir() + L"\\AntiDarkness.json";
-}
-
-void SaveAntiDarknessConfig() {
-    std::wstring folderPath = GetConfigDir();
-    CreateDirectoryW(folderPath.c_str(), NULL);
-
-    nlohmann::json j;
-    j["enabled"] = GetAntiDarknessEnabled();
-
-    std::ofstream file(GetAntiDarknessConfigPath());
-    if (file.is_open()) {
-        file << j.dump(4);
-        file.close();
-    }
-}
-
-void LoadAntiDarknessConfig() {
-    std::wstring filePath = GetAntiDarknessConfigPath();
-    std::ifstream file(filePath);
-    if (file.is_open()) {
-        try {
-            nlohmann::json j;
-            file >> j;
-            if (j.contains("enabled") && j["enabled"].is_boolean()) {
-                SetAntiDarknessEnabled(j["enabled"].get<bool>());
-            }
-            file.close();
-        } catch (...) {}
-    }
-}
-
-// AntiDarkness用のメニュー項目名を取得します。
-std::wstring GetAntiDarknessMenuName() {
-    return GetAntiDarknessEnabled() ? L"Toggle: [ON]" : L"Toggle: [OFF]";
-}
-
-// SchematicControl用の設定ファイルの保存先パスを取得します。
-// 実装理由：キーバインド設定等とは独立した専用の設定ファイルとして保存するため。
-std::wstring GetSchematicControlConfigPath() {
-    return GetConfigDir() + L"\\SchematicControl.json";
-}
-
-void SaveSchematicControlConfig() {
-    std::wstring folderPath = GetConfigDir();
-    CreateDirectoryW(folderPath.c_str(), NULL);
-
-    nlohmann::json j;
-    j["enabled"] = GetSchematicControlEnabled();
-
-    std::ofstream file(GetSchematicControlConfigPath());
-    if (file.is_open()) {
-        file << j.dump(4);
-        file.close();
-    }
-}
-
-void LoadSchematicControlConfig() {
-    std::wstring filePath = GetSchematicControlConfigPath();
-    std::ifstream file(filePath);
-    if (file.is_open()) {
-        try {
-            nlohmann::json j;
-            file >> j;
-            if (j.contains("enabled") && j["enabled"].is_boolean()) {
-                SetSchematicControlEnabled(j["enabled"].get<bool>());
-            }
-            file.close();
-        } catch (...) {}
-    }
-}
-
-// SchematicControl用のメニュー項目名を取得します。
-std::wstring GetSchematicControlMenuName() {
-    return GetSchematicControlEnabled() ? L"Toggle: [ON]" : L"Toggle: [OFF]";
-}
-
-void SaveKeybinds(const std::vector<int>& vks) {
-    std::wstring folderPath = GetConfigDir();
-    CreateDirectoryW(folderPath.c_str(), NULL);
-
-    // 1. Keybinds.json の保存
-    // 実装理由：コンソールおよびFreeCameraのホットキーバインド設定を簡略化されたキー名で保存するため。
-    nlohmann::json kbJson;
-    kbJson["console"] = vks;
-    kbJson["freecamera"] = g_freeCameraKeys;
-
-    std::ofstream kbFile(GetKeybindConfigPath());
-    if (kbFile.is_open()) {
-        kbFile << kbJson.dump(4);
-        kbFile.close();
-    }
-
-    // 2. FreeCamera.json の保存
-    // 実装理由：FreeCameraの速度設定をキーバインド設定と分離し、単体のモジュール用設定として保存するため。
-    nlohmann::json fcJson;
-    fcJson["speed"] = GetFreeCameraSpeed();
-
-    std::ofstream fcFile(GetFreeCameraConfigPath());
-    if (fcFile.is_open()) {
-        fcFile << fcJson.dump(4);
-        fcFile.close();
-    }
-}
-
-void LoadKeybinds() {
-    std::wstring kbPath = GetKeybindConfigPath();
-    std::ifstream kbFile(kbPath);
-    bool needsMigration = false;
-
-    if (kbFile.is_open()) {
-        try {
-            nlohmann::json j;
-            kbFile >> j;
-
-            // 互換性マイグレーション：古いキー名（"open_console_keys"等）がある場合
-            // 実装理由：ユーザーの既存の設定を引き継ぎつつ、新しいフォーマットへ自動移行するため。
-            if (j.contains("open_console_keys") || j.contains("freecamera_toggle_keys") || j.contains("freecamera_speed")) {
-                needsMigration = true;
-                if (j.contains("open_console_keys") && j["open_console_keys"].is_array()) {
-                    g_openConsoleKeys = j["open_console_keys"].get<std::vector<int>>();
-                }
-                if (j.contains("freecamera_toggle_keys") && j["freecamera_toggle_keys"].is_array()) {
-                    g_freeCameraKeys = j["freecamera_toggle_keys"].get<std::vector<int>>();
-                }
-                if (j.contains("freecamera_speed") && j["freecamera_speed"].is_number()) {
-                    SetFreeCameraSpeed(j["freecamera_speed"].get<float>());
-                }
-            } else {
-                // 新しいキー名のロード
-                if (j.contains("console") && j["console"].is_array()) {
-                    g_openConsoleKeys = j["console"].get<std::vector<int>>();
-                }
-                if (j.contains("freecamera") && j["freecamera"].is_array()) {
-                    g_freeCameraKeys = j["freecamera"].get<std::vector<int>>();
-                }
-            }
-            kbFile.close();
-        } catch (...) {}
-    }
-
-    // 2. 新しい FreeCamera.json のロード (マイグレーションが行われない場合のみロード)
-    if (!needsMigration) {
-        std::wstring fcPath = GetFreeCameraConfigPath();
-        std::ifstream fcFile(fcPath);
-        if (fcFile.is_open()) {
-            try {
-                nlohmann::json j;
-                fcFile >> j;
-                if (j.contains("speed") && j["speed"].is_number()) {
-                    SetFreeCameraSpeed(j["speed"].get<float>());
-                }
-                fcFile.close();
-            } catch (...) {}
-        }
-    }
-
-    // マイグレーションが必要だった場合、新しいファイル構成で保存し直して移行を完了します
-    if (needsMigration) {
-        SaveKeybinds(g_openConsoleKeys);
-    }
-}
 
 void UpdateMenuDisplay() {
     if (!g_hMenuStatic) return;
@@ -388,9 +110,11 @@ void UpdateMenuDisplay() {
         return;
     }
 
-    if (g_isWaitingForSpeedInput) {
-        AppendText(L"\r\n  --- Speed Input ---\r\n\r\n  Enter Speed: ", RGB(0, 255, 255));
-        AppendText(g_speedInputBuffer + L"_", RGB(255, 255, 255)); // 入力中の数値は白で目立たせる
+    if (g_numberInputTarget != NumberInputTarget::None) {
+        std::wstring header = (g_numberInputTarget == NumberInputTarget::FreeCameraSpeed) ? L"Speed Input" : L"Delay Input";
+        std::wstring label = (g_numberInputTarget == NumberInputTarget::FreeCameraSpeed) ? L"Enter Speed: " : L"Enter Delay (ms): ";
+        AppendText(L"\r\n  --- " + header + L" ---\r\n\r\n  " + label, RGB(0, 255, 255));
+        AppendText(g_numberInputBuffer + L"_", RGB(255, 255, 255)); // 入力中の数値は白で目立たせる
         
         SendMessageW(g_hMenuStatic, WM_SETREDRAW, TRUE, 0);
         InvalidateRect(g_hMenuStatic, NULL, TRUE);
@@ -405,8 +129,19 @@ void UpdateMenuDisplay() {
         AppendText(L"--- Main Menu ---\r\n", RGB(0, 255, 255));
     }
 
-    for (size_t i = 0; i < current->children.size(); ++i) {
-        std::wstring prefix = ((int)i == g_selectedIndex) ? L" >" : L"  ";
+    int startIdx = 0;
+    int endIdx = (int)current->children.size() - 1;
+
+    // メインメニューの場合のみ、1ページあたり5項目までの表示制限を適用します。
+    // 実装理由：画面の表示スペースに収め、A/Dキーでのページング移動を分かりやすくするため。
+    if (current == &g_menuTree) {
+        int page = g_selectedIndex / 5;
+        startIdx = page * 5;
+        endIdx = (std::min)(startIdx + 4, (int)current->children.size() - 1);
+    }
+
+    for (int i = startIdx; i <= endIdx; ++i) {
+        std::wstring prefix = (i == g_selectedIndex) ? L" >" : L"  ";
         std::wstring name = current->children[i].name;
 
         // デフォルトの色（シアン）
@@ -424,6 +159,10 @@ void UpdateMenuDisplay() {
                 itemColor = GetAntiDarknessEnabled() ? RGB(0, 255, 0) : RGB(255, 0, 0);
             } else if (name == L"SchematicControl") {
                 itemColor = GetSchematicControlEnabled() ? RGB(0, 255, 0) : RGB(255, 0, 0);
+            } else if (name == L"FastBlockPlacement") {
+                itemColor = GetFastBlockPlacementEnabled() ? RGB(0, 255, 0) : RGB(255, 0, 0);
+            } else if (name == L"Scaffold") {
+                itemColor = GetScaffoldEnabled() ? RGB(0, 255, 0) : RGB(255, 0, 0);
             }
         } else {
             // サブメニュー項目についてもON/OFFを緑/赤で着色
@@ -437,6 +176,19 @@ void UpdateMenuDisplay() {
         AppendText(prefix + name + L"\r\n", itemColor);
     }
 
+    // メインメニューの場合、下部に現在のページ状況と操作説明を表示します。
+    // 実装理由：ユーザーが現在全体のどの部分を見ていて、どのようにページをめくるかを示すため。
+    if (current == &g_menuTree) {
+        int totalItems = (int)current->children.size();
+        int totalPages = (totalItems + 4) / 5;
+        int currentPage = g_selectedIndex / 5;
+        wchar_t pageIndicator[128];
+        // ページ数と選択可能項目の間の空白の行を消し、操作説明文を除去してページ数のみを表示します。
+        // 実装理由：メニューレイアウトをコンパクトにし、操作説明はログ表示エリア側の初期メッセージと共通化するため。
+        swprintf_s(pageIndicator, L"  Page %d / %d", currentPage + 1, totalPages);
+        AppendText(pageIndicator, RGB(0, 255, 255));
+    }
+
     // 描画を再度有効化し、全体を再描画します
     SendMessageW(g_hMenuStatic, WM_SETREDRAW, TRUE, 0);
     InvalidateRect(g_hMenuStatic, NULL, TRUE);
@@ -447,16 +199,20 @@ void InitMenu() {
     LoadCreativeNoClipConfig(); // creativeNoClip設定のロード。実装理由：起動時に前回のON/OFF設定を引き継ぐため。
     LoadAntiDarknessConfig();   // AntiDarkness設定のロード。実装理由：起動時に前回のON/OFF設定を引き継ぐため。
     LoadSchematicControlConfig(); // SchematicControl設定のロード。実装理由：起動時に前回のON/OFF設定を引き継ぐため。
+    LoadFastBlockPlacementConfig(); // FastBlockPlacement設定のロード。実装理由：起動時に前回のON/OFF設定を引き継ぐため。
+    LoadScaffoldConfig();       // Scaffold設定のロード。実装理由：起動時に前回のON/OFF設定を引き継ぐため。
 
     g_menuTree = { L"ROOT", {
         { L"Console", { { L"..", {} }, { GetKeybindMenuName(), {} } } },
-        { L"FreeCamera", { { L"..", {} }, { GetFreeCameraKeyMenuName(), {} }, { GetFreeCameraSpeedMenuName(), {} } } },
+        { L"FreeCamera", { { L"..", {} }, { GetFreeCameraMenuName(), {} }, { GetFreeCameraKeyMenuName(), {} }, { GetFreeCameraSpeedMenuName(), {} } } },
         { L"CreativeNoClip", { { L"..", {} }, { GetCreativeNoClipMenuName(), {} } } },
         { L"AntiDarkness", { { L"..", {} }, { GetAntiDarknessMenuName(), {} } } },
-        { L"SchematicControl", { { L"..", {} }, { GetSchematicControlMenuName(), {} } } }
+        { L"SchematicControl", { { L"..", {} }, { GetSchematicControlMenuName(), {} } } },
+        { L"FastBlockPlacement", { { L"..", {} }, { GetFastBlockPlacementMenuName(), {} }, { GetFastBlockPlacementKeyMenuName(), {} }, { GetFastPlacementModeMenuName(), {} }, { GetFastPlacementDistanceMenuName(), {} } } },
+        { L"Scaffold", { { L"..", {} }, { GetScaffoldMenuName(), {} }, { GetScaffoldKeyMenuName(), {} } } }
     }};
     
-    // メインメニューの各項目名（Console, FreeCamera, CreativeNoClip, AntiDarkness, SchematicControl）をアルファベット昇順（A-Z）で並べ替えます。
+    // メインメニューの各項目名（Console, FreeCamera, CreativeNoClip, AntiDarkness, SchematicControl, Scaffold）をアルファベット昇順（A-Z）で並べ替えます。
     // 実装理由：ユーザー要求「Main Menuの項目の並びはアルファベット順になるようにして」を満たし、項目のアクセス順を整理するため。
     std::sort(g_menuTree.children.begin(), g_menuTree.children.end(), [](const MenuNode& a, const MenuNode& b) {
         return a.name < b.name;
@@ -473,38 +229,134 @@ void InitMenu() {
         if (child.name == L"Console") {
             g_keyBindNode = &child.children[1];
         } else if (child.name == L"FreeCamera") {
-            g_freeCameraKeyNode = &child.children[1];
-            g_freeCameraSpeedNode = &child.children[2];
+            g_freeCameraNode = &child.children[1];
+            g_freeCameraKeyNode = &child.children[2];
+            g_freeCameraSpeedNode = &child.children[3];
         } else if (child.name == L"CreativeNoClip") {
             g_creativeNoClipNode = &child.children[1];
         } else if (child.name == L"AntiDarkness") {
             g_antiDarknessNode = &child.children[1];
         } else if (child.name == L"SchematicControl") {
             g_schematicControlNode = &child.children[1];
+        } else if (child.name == L"FastBlockPlacement") {
+            g_fastBlockPlacementNode = &child.children[1];
+            g_fastBlockPlacementKeyNode = &child.children[2];
+            g_fastPlacementModeNode = &child.children[3];
+            g_fastPlacementDistanceNode = &child.children[4];
+        } else if (child.name == L"Scaffold") {
+            g_scaffoldNode = &child.children[1];
+            g_scaffoldKeyNode = &child.children[2];
         }
     }
 }
 
 void MenuUp() {
-    if (g_isWaitingForKeyBind || g_isWaitingForSpeedInput) return;
+    if (g_isWaitingForKeyBind || g_numberInputTarget != NumberInputTarget::None) return;
     MenuNode* current = g_menuStack.back();
     if (current->children.empty()) return;
-    g_selectedIndex = (g_selectedIndex - 1 + current->children.size()) % current->children.size();
+
+    if (current == &g_menuTree) {
+        // メインメニューの場合のみ、1ページ5項目制限に基づき、現在のページ内で上移動を循環させます。
+        // 実装理由：意図しない他ページへのカーソル移り込みを防ぎ、ページ内での直感的なループ移動を実現するため。
+        int totalItems = (int)current->children.size();
+        int page = g_selectedIndex / 5;
+        int pageStart = page * 5;
+        int pageEnd = (std::min)(pageStart + 4, totalItems - 1);
+        int pageSize = pageEnd - pageStart + 1;
+
+        int relativeIndex = g_selectedIndex - pageStart;
+        relativeIndex = (relativeIndex - 1 + pageSize) % pageSize;
+        g_selectedIndex = pageStart + relativeIndex;
+    } else {
+        // サブメニューは従来通り全項目で循環します。
+        g_selectedIndex = (g_selectedIndex - 1 + current->children.size()) % current->children.size();
+    }
     UpdateMenuDisplay();
 }
 
 void MenuDown() {
-    if (g_isWaitingForKeyBind || g_isWaitingForSpeedInput) return;
+    if (g_isWaitingForKeyBind || g_numberInputTarget != NumberInputTarget::None) return;
     MenuNode* current = g_menuStack.back();
     if (current->children.empty()) return;
-    g_selectedIndex = (g_selectedIndex + 1) % current->children.size();
+
+    if (current == &g_menuTree) {
+        // メインメニューの場合のみ、1ページ5項目制限に基づき、現在のページ内で下移動を循環させます。
+        // 実装理由：意図しない他ページへのカーソル移り込みを防ぎ、ページ内での直感的なループ移動を実現するため。
+        int totalItems = (int)current->children.size();
+        int page = g_selectedIndex / 5;
+        int pageStart = page * 5;
+        int pageEnd = (std::min)(pageStart + 4, totalItems - 1);
+        int pageSize = pageEnd - pageStart + 1;
+
+        int relativeIndex = g_selectedIndex - pageStart;
+        relativeIndex = (relativeIndex + 1) % pageSize;
+        g_selectedIndex = pageStart + relativeIndex;
+    } else {
+        // サブメニューは従来通り全項目で循環します。
+        g_selectedIndex = (g_selectedIndex + 1) % current->children.size();
+    }
+    UpdateMenuDisplay();
+}
+
+void MenuLeft() {
+    if (g_isWaitingForKeyBind || g_numberInputTarget != NumberInputTarget::None) return;
+    MenuNode* current = g_menuStack.back();
+    if (current != &g_menuTree || current->children.empty()) return;
+
+    // メインメニューでのみAキー/Leftキーによる前のページへの切り替え処理を行います。
+    // 実装理由：ページを切り替える際、切り替え前の選択行の高さ（相対インデックス）を維持した状態で移動するため。
+    int totalItems = (int)current->children.size();
+    int totalPages = (totalItems + 4) / 5;
+    if (totalPages <= 1) return;
+
+    int currentPage = g_selectedIndex / 5;
+    int relativeIndex = g_selectedIndex % 5;
+    int prevPage = (currentPage - 1 + totalPages) % totalPages;
+
+    int prevPageStart = prevPage * 5;
+    int prevPageEnd = (std::min)(prevPageStart + 4, totalItems - 1);
+    int prevPageSize = prevPageEnd - prevPageStart + 1;
+    int newRelativeIndex = (std::min)(relativeIndex, prevPageSize - 1);
+
+    g_selectedIndex = prevPageStart + newRelativeIndex;
+    UpdateMenuDisplay();
+}
+
+void MenuRight() {
+    if (g_isWaitingForKeyBind || g_numberInputTarget != NumberInputTarget::None) return;
+    MenuNode* current = g_menuStack.back();
+    if (current != &g_menuTree || current->children.empty()) return;
+
+    // メインメニューでのみDキー/Rightキーによる次のページへの切り替え処理を行います。
+    // 実装理由：ページを切り替える際、切り替え前の選択行の高さ（相対インデックス）を維持した状態で移動するため。
+    int totalItems = (int)current->children.size();
+    int totalPages = (totalItems + 4) / 5;
+    if (totalPages <= 1) return;
+
+    int currentPage = g_selectedIndex / 5;
+    int relativeIndex = g_selectedIndex % 5;
+    int nextPage = (currentPage + 1) % totalPages;
+
+    int nextPageStart = nextPage * 5;
+    int nextPageEnd = (std::min)(nextPageStart + 4, totalItems - 1);
+    int nextPageSize = nextPageEnd - nextPageStart + 1;
+    int newRelativeIndex = (std::min)(relativeIndex, nextPageSize - 1);
+
+    g_selectedIndex = nextPageStart + newRelativeIndex;
     UpdateMenuDisplay();
 }
 
 // トグル項目（CreativeNoClipやAntiDarkness）のON/OFF切り替えと設定の保存、およびログ出力を行います。
 // 実装理由：サブメニューから選択された場合と、メインメニューから直接選択された場合のトグル処理を共通化し、コードの重複を防ぐため。
 void ToggleMenuNode(const std::wstring& parentName, MenuNode* toggleNode) {
-    if (parentName == L"CreativeNoClip") {
+    if (parentName == L"FreeCamera") {
+        bool nextState = !GetFreeCameraEnabled();
+        SetFreeCameraEnabled(nextState);
+        AddLog(nextState ? L"[FreeCamera] Enabled" : L"[FreeCamera] Disabled");
+        if (toggleNode) {
+            toggleNode->name = GetFreeCameraMenuName();
+        }
+    } else if (parentName == L"CreativeNoClip") {
         bool nextState = !GetCreativeNoClipEnabled();
         SetCreativeNoClipEnabled(nextState);
         AddLog(nextState ? L"[CreativeNoClip] Enabled" : L"[CreativeNoClip] Disabled");
@@ -528,11 +380,27 @@ void ToggleMenuNode(const std::wstring& parentName, MenuNode* toggleNode) {
             toggleNode->name = GetSchematicControlMenuName();
         }
         SaveSchematicControlConfig();
+    } else if (parentName == L"FastBlockPlacement") {
+        bool nextState = !GetFastBlockPlacementEnabled();
+        SetFastBlockPlacementEnabled(nextState);
+        AddLog(nextState ? L"[FastBlockPlacement] Enabled" : L"[FastBlockPlacement] Disabled");
+        if (toggleNode) {
+            toggleNode->name = GetFastBlockPlacementMenuName();
+        }
+        SaveFastBlockPlacementConfig();
+    } else if (parentName == L"Scaffold") {
+        bool nextState = !GetScaffoldEnabled();
+        SetScaffoldEnabled(nextState);
+        AddLog(nextState ? L"[Scaffold] Enabled" : L"[Scaffold] Disabled");
+        if (toggleNode) {
+            toggleNode->name = GetScaffoldMenuName();
+        }
+        SaveScaffoldConfig();
     }
 }
 
 void MenuSelect() {
-    if (g_isWaitingForKeyBind || g_isWaitingForSpeedInput) return;
+    if (g_isWaitingForKeyBind || g_numberInputTarget != NumberInputTarget::None) return;
     MenuNode* current = g_menuStack.back();
     if (g_selectedIndex < 0 || g_selectedIndex >= (int)current->children.size()) return;
 
@@ -555,8 +423,12 @@ void MenuSelect() {
         // バインド先のキー配列変数を正しく切り替えて書き込むため。
         if (current->name == L"Console") {
             g_keyBindTarget = KeyBindTarget::Console;
-        } else {
+        } else if (current->name == L"FreeCamera") {
             g_keyBindTarget = KeyBindTarget::FreeCamera;
+        } else if (current->name == L"FastBlockPlacement") {
+            g_keyBindTarget = KeyBindTarget::FastBlockPlacement;
+        } else if (current->name == L"Scaffold") {
+            g_keyBindTarget = KeyBindTarget::Scaffold;
         }
         g_isWaitingForKeyBind = true;
 
@@ -565,13 +437,45 @@ void MenuSelect() {
         while ((GetAsyncKeyState(VK_SPACE) & 0x8000) || (GetAsyncKeyState(VK_RETURN) & 0x8000)) {
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
-        g_isWaitingForSpeedInput = true;
-        g_lastSpeedInputStartTime = GetTickCount(); // 入力開始時刻を記録。実装理由：メッセージキューの残存キー誤動作を防ぐため。
-        g_isFirstSpeedInputChar = true;             // 最初の入力を待ち受ける状態にする。実装理由：数値キー入力時に現在の設定値をクリアするため。
-        // 初期値として現在の速度をセットします
+        
+        g_numberInputTarget = NumberInputTarget::FreeCameraSpeed;
         wchar_t buf[64];
         swprintf_s(buf, L"%.5f", GetFreeCameraSpeed());
-        g_speedInputBuffer = buf;
+        g_numberInputBuffer = buf;
+        
+        g_lastNumberInputStartTime = GetTickCount(); // 入力開始時刻を記録。実装理由：メッセージキューの残存キー誤動作を防ぐため。
+        g_isFirstNumberInputChar = true;             // 最初の入力を待ち受ける状態にする。実装理由：数値キー入力時に現在の設定値をクリアするため。
+    } else if (selected->name.rfind(L"Mode: ", 0) == 0) {
+        // 設定された設置モードをトグル循環（X-Axis -> Y-Axis -> Z-Axis）させます。(Autoは廃止されました)
+        // 実装理由：複雑なサブメニューを用意せず、項目を決定キー（Space/Enter）でクリックするだけで
+        // 直感的にモード変更と設定ファイルの保存を実行できるようにするため。
+        PlacementMode currentMode = GetFastPlacementMode();
+        PlacementMode nextMode = static_cast<PlacementMode>((static_cast<int>(currentMode) + 1) % 3);
+        SetFastPlacementMode(nextMode);
+
+        std::wstring modeStr;
+        switch (nextMode) {
+        case MODE_X_AXIS: modeStr = L"X-Axis"; break;
+        case MODE_Y_AXIS: modeStr = L"Y-Axis"; break;
+        case MODE_Z_AXIS: modeStr = L"Z-Axis"; break;
+        default:          modeStr = L"Y-Axis"; break;
+        }
+        AddLog(L"[FastBlockPlacement] Mode changed to: " + modeStr);
+
+        selected->name = GetFastPlacementModeMenuName();
+        SaveFastBlockPlacementConfig();
+    } else if (selected->name.rfind(L"Range: ", 0) == 0) {
+        // 設定された設置可能距離を 1〜5ブロック の範囲でトグル循環させます。
+        // 実装理由：1〜5という限定的な範囲のため、キーボードによる数値入力を省き、
+        // 決定キー（Space/Enter）によるトグルだけで素早く設定を変更可能にするため。
+        int currentDist = GetFastPlacementDistance();
+        int nextDist = (currentDist % 5) + 1;
+        SetFastPlacementDistance(nextDist);
+
+        AddLog(L"[FastBlockPlacement] Distance set to: " + std::to_wstring(nextDist) + L" blocks");
+
+        selected->name = GetFastPlacementDistanceMenuName();
+        SaveFastBlockPlacementConfig();
     } else if (selected->name.rfind(L"Toggle: ", 0) == 0) {
         ToggleMenuNode(current->name, selected);
 
@@ -611,50 +515,8 @@ void MenuSelect() {
     UpdateMenuDisplay();
 }
 
-// 複数キーコンボを新キーバインドとして登録・保存する関数 (Console用)
-void BindNewKeys(const std::vector<int>& vks) {
-    g_openConsoleKeys = vks;
-    SaveKeybinds(vks);
-    g_isWaitingForKeyBind = false;
-    // キーバインド設定完了時の時刻（ミリ秒）を記録します。
-    // 実装理由：決定キーが離された際の余波メッセージがメニュー選択を再度トリガーするのを防ぐクールダウン監視用。
-    g_lastBindTime = GetTickCount();
-    
-    if (g_keyBindNode) {
-        g_keyBindNode->name = GetKeybindMenuName();
-    }
-    
-    std::wstring keyNames = L"";
-    for (size_t i = 0; i < vks.size(); ++i) {
-        if (i > 0) keyNames += L" + ";
-        keyNames += GetKeyName(vks[i]);
-    }
-    
-    AddLog(L"[Tsukuyomi] Console keybind changed to: " + keyNames);
-    UpdateMenuDisplay();
-}
 
-// FreeCamera用のトグルキーバインド確定処理
-// 実装理由：ホットキーバインド設定待受完了時、FreeCamera用のキー配列変数に登録し永続化するため。
-void BindFreeCameraKeys(const std::vector<int>& vks) {
-    g_freeCameraKeys = vks;
-    SaveKeybinds(g_openConsoleKeys);
-    g_isWaitingForKeyBind = false;
-    g_lastBindTime = GetTickCount(); // クールダウン設定
-    
-    if (g_freeCameraKeyNode) {
-        g_freeCameraKeyNode->name = GetFreeCameraKeyMenuName();
-    }
-    
-    std::wstring keyNames = L"";
-    for (size_t i = 0; i < vks.size(); ++i) {
-        if (i > 0) keyNames += L" + ";
-        keyNames += GetKeyName(vks[i]);
-    }
-    
-    AddLog(L"[Tsukuyomi] FreeCamera toggle key changed to: " + keyNames);
-    UpdateMenuDisplay();
-}
+
 
 void AddLog(const std::wstring& text) {
     if (!g_hLogEdit) return;
@@ -737,6 +599,7 @@ void ClearLog() {
         SetWindowTextW(g_hLogEdit, L"");
         AddLog(L"[Tsukuyomi] Mod Injected Successfully!");
         AddLog(L"Use W/S or Up/Down keys to navigate menu.");
+        AddLog(L"Use A/D or Left/Right keys to switch pages.");
         AddLog(L"Press 'Space' to select item.");
         AddLog(L"Press 'Esc' to hide window.");
     }
@@ -744,7 +607,14 @@ void ClearLog() {
 
 LRESULT CALLBACK LogSubclassProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     if (uMsg == WM_KEYDOWN || uMsg == WM_SYSKEYDOWN) {
+        // キーボードの入力メッセージを親ウィンドウ（WndProc）へ中継し、RichEditフォーカス時もメニュー移動を可能にします。
         SendMessageW(GetParent(hwnd), uMsg, wParam, lParam);
+        return 0;
+    }
+    if (uMsg == WM_CHAR || uMsg == WM_SYSCHAR || uMsg == WM_DEADCHAR || uMsg == WM_SYSDEADCHAR) {
+        // 読み取り専用エディットボックスでのキー入力によるWindowsシステムエラー音（ビープ音）を抑制します。
+        // 実装理由：RichEditコントロールにフォーカスがある状態で入力キーを押すと、ES_READONLYスタイルにより
+        // 「入力不可」のシステム警告音が鳴ってしまうのを防ぐため、文字イベントをここで握りつぶします。
         return 0;
     }
     return CallWindowProcW(g_fnOldLogProc, hwnd, uMsg, wParam, lParam);
@@ -763,6 +633,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
         break;
     }
     case WM_CREATE: {
+        // メインウィンドウハンドルをここで初期設定します。
+        // 実装理由：CreateWindowExWの呼び出しが完了する前にWM_CREATE内でAddLog（初期案内メッセージ）が呼ばれた際、
+        // g_hMainWndがNULLのままだとスレッド判定ルーチンで同期書き込みからPostMessageへフォールバックされてしまい、
+        // 初期起動メッセージが消失してしまうのを防ぐため。
+        g_hMainWnd = hWnd;
+
         g_hBlackBrush = CreateSolidBrush(RGB(0, 0, 0));
         HFONT hFont = CreateFontW(16, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
             DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
@@ -795,6 +671,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
             hWnd, (HMENU)2, GetModuleHandle(NULL), NULL
         );
         SendMessageW(g_hMenuStatic, WM_SETFONT, (WPARAM)hFont, TRUE);
+        SetWindowLongPtrW(g_hMenuStatic, GWLP_WNDPROC, (LONG_PTR)LogSubclassProc);
 
         // RichEditの背景色を黒、デフォルトの文字色をシアン（RGB(0, 255, 255)）に設定します。
         // 実装理由：g_hMenuStaticをSTATICからRichEditに変更したため、背景とデフォルトの書式を黒とシアンに初期設定する必要があるため。
@@ -824,65 +701,68 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
         // --- 数値入力モード時の処理 ---
         // 実装理由：エディットボックスやポップアップ入力なしに、メニュー上の表示領域だけで
         // 直感的に小数のタイピングを受け付け、確定・破棄できるようにするため。
-        if (g_isWaitingForSpeedInput) {
+        if (g_numberInputTarget != NumberInputTarget::None) {
             if (wParam >= '0' && wParam <= '9') {
-                if (g_isFirstSpeedInputChar) {
-                    g_speedInputBuffer = L"";
-                    g_isFirstSpeedInputChar = false;
+                if (g_isFirstNumberInputChar) {
+                    g_numberInputBuffer = L"";
+                    g_isFirstNumberInputChar = false;
                 }
-                g_speedInputBuffer += (wchar_t)wParam;
+                g_numberInputBuffer += (wchar_t)wParam;
             }
             else if (wParam >= VK_NUMPAD0 && wParam <= VK_NUMPAD9) {
-                if (g_isFirstSpeedInputChar) {
-                    g_speedInputBuffer = L"";
-                    g_isFirstSpeedInputChar = false;
+                if (g_isFirstNumberInputChar) {
+                    g_numberInputBuffer = L"";
+                    g_isFirstNumberInputChar = false;
                 }
-                g_speedInputBuffer += (wchar_t)('0' + (wParam - VK_NUMPAD0));
+                g_numberInputBuffer += (wchar_t)('0' + (wParam - VK_NUMPAD0));
             }
             else if (wParam == VK_OEM_PERIOD || wParam == VK_DECIMAL) {
-                if (g_isFirstSpeedInputChar) {
-                    g_speedInputBuffer = L"";
-                    g_isFirstSpeedInputChar = false;
-                }
-                // 小数点がまだ入力されていなければ追加可能にします
-                if (g_speedInputBuffer.find(L'.') == std::wstring::npos) {
-                    g_speedInputBuffer += L'.';
+                // FreeCameraSpeed の場合のみ、小数点を許容します
+                if (g_numberInputTarget == NumberInputTarget::FreeCameraSpeed) {
+                    if (g_isFirstNumberInputChar) {
+                        g_numberInputBuffer = L"";
+                        g_isFirstNumberInputChar = false;
+                    }
+                    if (g_numberInputBuffer.find(L'.') == std::wstring::npos) {
+                        g_numberInputBuffer += L'.';
+                    }
                 }
             }
             else if (wParam == VK_BACK) {
-                if (g_isFirstSpeedInputChar) {
-                    // 最初に入力されたBackspaceは、現在の設定値を全消去して空にします
-                    g_speedInputBuffer = L"";
-                    g_isFirstSpeedInputChar = false;
-                } else if (!g_speedInputBuffer.empty()) {
-                    g_speedInputBuffer.pop_back();
+                if (g_isFirstNumberInputChar) {
+                    g_numberInputBuffer = L"";
+                    g_isFirstNumberInputChar = false;
+                } else if (!g_numberInputBuffer.empty()) {
+                    g_numberInputBuffer.pop_back();
                 }
             }
             else if (wParam == VK_RETURN) {
                 // 入力開始直後（300ms以内）の Enter キーは、メッセージキューに残存した決定キーの誤動作を防ぐため無視します。
-                if (GetTickCount() - g_lastSpeedInputStartTime < 300) {
+                if (GetTickCount() - g_lastNumberInputStartTime < 300) {
                     break;
                 }
-                if (!g_speedInputBuffer.empty()) {
+                if (!g_numberInputBuffer.empty()) {
                     try {
-                        float speed = std::stof(g_speedInputBuffer);
-                        if (speed < 0.0f) speed = 0.0f;
-                        SetFreeCameraSpeed(speed);
-                        AddLog(L"[FreeCamera] Speed set to: " + g_speedInputBuffer);
+                        if (g_numberInputTarget == NumberInputTarget::FreeCameraSpeed) {
+                            float speed = std::stof(g_numberInputBuffer);
+                            if (speed < 0.0f) speed = 0.0f;
+                            SetFreeCameraSpeed(speed);
+                            AddLog(L"[FreeCamera] Speed set to: " + g_numberInputBuffer);
+                            if (g_freeCameraSpeedNode) {
+                                g_freeCameraSpeedNode->name = GetFreeCameraSpeedMenuName();
+                            }
+                            SaveKeybinds(g_openConsoleKeys);
+                        }
                     } catch (...) {
-                        AddLog(L"[Error] Invalid speed value.");
+                        AddLog(L"[Error] Invalid numerical value.");
                     }
                 }
-                g_isWaitingForSpeedInput = false;
+                g_numberInputTarget = NumberInputTarget::None;
                 g_lastBindTime = GetTickCount(); // 確定後にメニューへ戻った際の残存キー誤動作を防ぐクールダウン。
-                if (g_freeCameraSpeedNode) {
-                    g_freeCameraSpeedNode->name = GetFreeCameraSpeedMenuName();
-                }
-                SaveKeybinds(g_openConsoleKeys);
                 UpdateMenuDisplay();
             }
             else if (wParam == VK_ESCAPE) {
-                g_isWaitingForSpeedInput = false;
+                g_numberInputTarget = NumberInputTarget::None;
                 g_lastBindTime = GetTickCount(); // キャンセル後にメニューへ戻った際の残存キー誤動作を防ぐクールダウン。
                 UpdateMenuDisplay();
             }
@@ -907,6 +787,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
         }
         else if (wParam == 'S' || wParam == VK_DOWN) {
             MenuDown();
+        }
+        else if (wParam == 'A' || wParam == VK_LEFT) {
+            MenuLeft();
+        }
+        else if (wParam == 'D' || wParam == VK_RIGHT) {
+            MenuRight();
         }
         else if (wParam == VK_SPACE || wParam == VK_RETURN) {
             MenuSelect();

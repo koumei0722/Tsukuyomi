@@ -4,15 +4,6 @@
 
 ---
 
-## 🌟 主な機能 (Features)
-
-- **FreeCamera**
-- **CreativeNoClip**
-- **AntiDarkness**
-- **SchematicControl**
-
----
-
 ## 💻 ゲーム内コンソールメニュー (In-Game Menu)
 
 ゲーム内で登録されたキー（デフォルト：`Y`）を押すと、`RichEdit` を用いた専用のコンソールメニューが重ね合わせウィンドウとして展開されます。

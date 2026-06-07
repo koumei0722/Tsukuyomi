@@ -9,6 +9,8 @@ std::byte* g_addrYawUpdate = nullptr;
 std::byte* g_addrPacketSend = nullptr;
 std::byte* g_addrCreativeNoClip = nullptr; // creativeNoClipのアドレス
 std::byte* g_addrAntiDarkness = nullptr; // AntiDarknessのアドレス
+std::byte* g_addrBuildBlock = nullptr; // buildBlockのアドレス
+std::byte* g_addrPlayerPositionUpdate = nullptr; // プレイヤー座標更新のアドレス
 
 bool PerformSignatureScans() {
     AddLog(L"[Tsukuyomi] Starting signature scans...");
@@ -61,6 +63,26 @@ bool PerformSignatureScans() {
     g_addrAntiDarkness = reinterpret_cast<std::byte*>(AntiDarknessResult.get());
     if (!g_addrAntiDarkness) {
         AddLog(L"[Error] Failed to find AntiDarkness signature.");
+        return false;
+    }
+
+    // 6. buildBlockのシグネチャスキャン
+    // 実装理由：ブロックの高速設置を呼び出すため。
+    constexpr auto buildBlockSig = hat::compile_signature<"48 89 5C 24 10 48 89 74 24 18 55 57 41 54 41 56 41 57 48 8D 6C 24 90 48 81 EC 70 01 00 00 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 45 60 41 0F B6 F1 45 0F B6 F0 4C 8B FA 48 8B F9">();
+    hat::scan_result BuildBlockResult = hat::find_pattern(buildBlockSig, ".text");
+    g_addrBuildBlock = reinterpret_cast<std::byte*>(BuildBlockResult.get());
+    if (!g_addrBuildBlock) {
+        AddLog(L"[Error] Failed to find buildBlock signature.");
+        return false;
+    }
+
+    // 7. PlayerPositionUpdateのシグネチャスキャン
+    // 実装理由：プレイヤーの現在座標を取得するため。
+    constexpr auto playerPosSig = hat::compile_signature<"F2 41 0F 10 00 33 C9 F2 0F 11 02 41 8B 40 08 89 42 08 F2 41 0F 10 40 0C F2 0F 11 42 0C 41 8B 40 14 89 42 14 41 8B 40 18 89 42 18">();
+    hat::scan_result PlayerPosResult = hat::find_pattern(playerPosSig, ".text");
+    g_addrPlayerPositionUpdate = reinterpret_cast<std::byte*>(PlayerPosResult.get());
+    if (!g_addrPlayerPositionUpdate) {
+        AddLog(L"[Error] Failed to find PlayerPositionUpdate signature.");
         return false;
     }
 
