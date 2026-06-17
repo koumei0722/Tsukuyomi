@@ -2,7 +2,6 @@
 #include "console/console.h"
 #include "modules/FreeCamera.h"
 #include "modules/FastBlockPlacement.h"
-#include "modules/Scaffold.h"
 #include <vector>
 #include <algorithm>
 #include <thread>
@@ -130,8 +129,6 @@ static void HandleKeyBindWaiting() {
                         BindFreeCameraKeys(pressedKeys);
                     } else if (g_keyBindTarget == KeyBindTarget::FastBlockPlacement) {
                         BindFastBlockPlacementKeys(pressedKeys);
-                    } else if (g_keyBindTarget == KeyBindTarget::Scaffold) {
-                        BindScaffoldKeys(pressedKeys);
                     }
                 }
             } else {
@@ -143,8 +140,6 @@ static void HandleKeyBindWaiting() {
                     BindFreeCameraKeys(pressedKeys);
                 } else if (g_keyBindTarget == KeyBindTarget::FastBlockPlacement) {
                     BindFastBlockPlacementKeys(pressedKeys);
-                } else if (g_keyBindTarget == KeyBindTarget::Scaffold) {
-                    BindScaffoldKeys(pressedKeys);
                 }
             }
             g_hasClearedInitialKeys = false; // 次回のバインド待受に備えてフラグをリセットします。
@@ -269,40 +264,7 @@ static void HandleGameHotkey() {
             }
         }
 
-        // --- 4. Scaffoldトグルキーの判定 ---
-        // 実装理由：ゲーム内でScaffoldトグルキー（同時押し対応）が押された際、有効/無効をトグルし、
-        // 設定をセーブせずにメニュー表示を同期した上でチャタリングを防ぐため。
-        bool scaffoldPressed = true;
-        for (int vk : g_scaffoldKeys) {
-            if (!(GetAsyncKeyState(vk) & 0x8000)) {
-                scaffoldPressed = false;
-                break;
-            }
         }
-
-        if (scaffoldPressed && !g_scaffoldKeys.empty()) {
-            bool nextState = !GetScaffoldEnabled();
-            SetScaffoldEnabled(nextState);
-            AddLog(nextState ? L"[Scaffold] Enabled (via hotkey)" : L"[Scaffold] Disabled (via hotkey)");
-            if (g_scaffoldNode) {
-                g_scaffoldNode->name = GetScaffoldMenuName();
-            }
-            UpdateMenuDisplay(); // ホットキーによるトグル状態の変化をリアルタイムにコンソールメニューに反映させます。
-
-            // トグルキーが完全に離されるまで待機（チャタリング防止）
-            while (true) {
-                bool anyPressed = false;
-                for (int vk : g_scaffoldKeys) {
-                    if (GetAsyncKeyState(vk) & 0x8000) {
-                        anyPressed = true;
-                        break;
-                    }
-                }
-                if (!anyPressed) break;
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-            }
-        }
-    }
 }
 
 void UpdateHotkeyMonitor() {

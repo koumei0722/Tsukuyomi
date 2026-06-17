@@ -107,7 +107,7 @@ void CancelKeyBind() {
 }
 
 // 全てのキーバインド設定をJSON形式で保存します。
-// 実装理由：コンソール、FreeCamera、FastBlockPlacement、およびScaffoldのホットキーバインド設定と
+// 実装理由：コンソール、FreeCamera、およびFastBlockPlacementのホットキーバインド設定と
 // FreeCameraの速度設定を一貫して保存するため。
 void SaveKeybinds(const std::vector<int>& vks) {
     std::wstring folderPath = GetConfigDir();
@@ -118,7 +118,6 @@ void SaveKeybinds(const std::vector<int>& vks) {
     kbJson["console"] = vks;
     kbJson["freecamera"] = g_freeCameraKeys;
     kbJson["fastblockplacement"] = g_fastBlockPlacementKeys;
-    kbJson["scaffold"] = g_scaffoldKeys;
 
     std::ofstream kbFile(GetKeybindConfigPath());
     if (kbFile.is_open()) {
@@ -173,9 +172,6 @@ void LoadKeybinds() {
                 }
                 if (j.contains("fastblockplacement") && j["fastblockplacement"].is_array()) {
                     g_fastBlockPlacementKeys = j["fastblockplacement"].get<std::vector<int>>();
-                }
-                if (j.contains("scaffold") && j["scaffold"].is_array()) {
-                    g_scaffoldKeys = j["scaffold"].get<std::vector<int>>();
                 }
             }
             kbFile.close();

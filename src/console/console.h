@@ -23,7 +23,6 @@ extern bool shouldExit;       // スレッドおよびDLLの終了シグナル
 extern std::vector<int> g_openConsoleKeys;  // コンソールを開くキー（仮想キーコード配列）
 extern std::vector<int> g_freeCameraKeys;   // FreeCameraの有効/無効を切り替えるトグルキー配列
 extern std::vector<int> g_fastBlockPlacementKeys; // FastBlockPlacementのトグルキー配列
-extern std::vector<int> g_scaffoldKeys;     // Scaffoldのトグルキー配列
 
 extern bool g_isWaitingForKeyBind;  // キーバインド入力待ちフラグ
 
@@ -32,8 +31,7 @@ extern bool g_isWaitingForKeyBind;  // キーバインド入力待ちフラグ
 enum class KeyBindTarget {
     Console,
     FreeCamera,
-    FastBlockPlacement,
-    Scaffold
+    FastBlockPlacement
 };
 extern KeyBindTarget g_keyBindTarget; // 現在待受中のキーバインド対象
 
@@ -68,8 +66,6 @@ extern MenuNode* g_fastBlockPlacementNode;
 extern MenuNode* g_fastBlockPlacementKeyNode;
 extern MenuNode* g_fastPlacementModeNode;
 extern MenuNode* g_fastPlacementDistanceNode;
-extern MenuNode* g_scaffoldNode;
-extern MenuNode* g_scaffoldKeyNode;
 
 
 // ---------------------------------------------------------
@@ -140,12 +136,5 @@ std::wstring GetFastPlacementDistanceMenuName();
 void SaveFastBlockPlacementConfig();
 void LoadFastBlockPlacementConfig();
 void BindFastBlockPlacementKeys(const std::vector<int>& vks);
-
-// Scaffold項目 (ScaffoldItem.cpp)
-std::wstring GetScaffoldMenuName();
-std::wstring GetScaffoldKeyMenuName();
-void SaveScaffoldConfig();
-void LoadScaffoldConfig();
-void BindScaffoldKeys(const std::vector<int>& vks);
 
 

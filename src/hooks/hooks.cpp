@@ -4,7 +4,6 @@
 #include "console/console.h"
 #include "modules/FreeCamera.h"
 #include "modules/FastBlockPlacement.h"
-#include "modules/Scaffold.h"
 #include "modules/AutoTool.h"
 #include "utils/window_utils.h"
 #include <MinHook.h>
@@ -22,7 +21,7 @@ typedef void(__fastcall* PacketSend_t)(void* _this, void* packet);
 static PacketSend_t OrigPacketSend = nullptr;
 
 // buildBlock フックのオリジナルポインタ
-// 実装理由：他モジュール（Scaffoldなど）からフックをバイパスしてオリジナルのブロック設置処理を呼び出せるようにグローバル公開します。
+// 実装理由：他モジュール（FastBlockPlacementなど）からフックをバイパスしてオリジナルのブロック設置処理を呼び出せるようにグローバル公開します。
 typedef bool(__fastcall* BuildBlockHook_t)(void* rcx, void* rdx, unsigned char r8, unsigned char r9);
 BuildBlockHook_t g_origBuildBlock = nullptr;
 
@@ -155,7 +154,7 @@ static bool __fastcall hk_BuildBlock(void* rcx, void* rdx, unsigned char r8, uns
 
     // 自動設置中（右クリック長押しでY高度固定設置中）である場合、
     // ゲーム本来の手動設置処理を無効化するため、オリジナル処理を呼び出さずに早期リターンします。
-    // 実装理由：手動による重複設置やパケット競合を無効化し、自動設置（Scaffold）の整合性を保つため。
+    // 実装理由：手動による重複設置やパケット競合を無効化し、自動設置の整合性を保つため。
     // プログラムによる自動設置は g_origBuildBlock をバイパスして直接呼び出すため、ここを通過しません。
     // したがって、IsFastPlacementRunning() による呼び出し元チェックは不要となり、wasActive のみで安全にガードできます。
     if (wasActive) {
@@ -163,7 +162,7 @@ static bool __fastcall hk_BuildBlock(void* rcx, void* rdx, unsigned char r8, uns
     }
 
     // 再入ガードを設定してオリジナル関数を呼び出します。
-    // 実装理由：手動設置処理の実行中に、ゲーム内の位置同期によって再帰的に Scaffold 等の自動設置が
+    // 実装理由：手動設置処理の実行中に、ゲーム内の位置同期によって再帰的に自動設置が
     // 呼び出されてクラッシュする（関数の再入バグ）のを防ぐため。
     g_isPlacingBlock = true;
     bool result = g_origBuildBlock(rcx, rdx, r8, r9);
@@ -193,9 +192,6 @@ static void __fastcall hk_PlayerPositionUpdate(void* rcx, void* rdx, void* r8, v
         // 実装理由：OrigPlayerPositionUpdateを実行するとそのフレームのTickが進み、手動設置で利用された
         // コンテキストポインタが破棄されるため、まだ有効な状態（前処理）のポインタを用いて安全に設置処理を呼び出すため。
         if (!g_isPlacingBlock) {
-            // Scaffoldの設置判定と処理を実行します。
-            UpdateScaffold(g_lastGameMode);
-
             // 安全なシミュレーションTickのタイミングでFastBlockPlacementの遅延自動設置を更新します。
             UpdateFastPlacement();
         }
