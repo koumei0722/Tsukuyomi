@@ -607,11 +607,24 @@ void ClearLog() {
 
 LRESULT CALLBACK LogSubclassProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     if (uMsg == WM_KEYDOWN || uMsg == WM_SYSKEYDOWN) {
+        // Ctrl+C (コピー) および Ctrl+A (すべて選択) のショートカットキーは親ウィンドウに転送せず、RichEdit コントロール自身に処理させます。
+        // 実装理由：ユーザーがログ表示エリア（g_hLogEdit）で選択した部分文字列をクリップボードにコピーできるようにし、また全体の選択操作を行えるようにするため。
+        bool ctrlPressed = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
+        if (ctrlPressed && (wParam == 'C' || wParam == 'A')) {
+            return CallWindowProcW(g_fnOldLogProc, hwnd, uMsg, wParam, lParam);
+        }
+
         // キーボードの入力メッセージを親ウィンドウ（WndProc）へ中継し、RichEditフォーカス時もメニュー移動を可能にします。
         SendMessageW(GetParent(hwnd), uMsg, wParam, lParam);
         return 0;
     }
     if (uMsg == WM_CHAR || uMsg == WM_SYSCHAR || uMsg == WM_DEADCHAR || uMsg == WM_SYSDEADCHAR) {
+        // Ctrl+C (コピー、文字コード 3) および Ctrl+A (すべて選択、文字コード 1) のイベントは RichEdit コントロール自身に処理させます。
+        // 実装理由：読み取り専用 RichEdit コントロールであっても、既定のコピー処理と全選択処理が正しく動作するようにするため。
+        if (wParam == 3 || wParam == 1) {
+            return CallWindowProcW(g_fnOldLogProc, hwnd, uMsg, wParam, lParam);
+        }
+
         // 読み取り専用エディットボックスでのキー入力によるWindowsシステムエラー音（ビープ音）を抑制します。
         // 実装理由：RichEditコントロールにフォーカスがある状態で入力キーを押すと、ES_READONLYスタイルにより
         // 「入力不可」のシステム警告音が鳴ってしまうのを防ぐため、文字イベントをここで握りつぶします。
