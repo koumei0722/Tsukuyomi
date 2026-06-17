@@ -62,6 +62,7 @@ extern MenuNode* g_freeCameraKeyNode;
 extern MenuNode* g_freeCameraSpeedNode;
 extern MenuNode* g_creativeNoClipNode;
 extern MenuNode* g_antiDarknessNode;
+extern MenuNode* g_autoToolNode;            // AutoToolのメニューノードへの参照。実装理由：メニュー表示名を動的に書き換えるため。
 extern MenuNode* g_schematicControlNode;
 extern MenuNode* g_fastBlockPlacementNode;
 extern MenuNode* g_fastBlockPlacementKeyNode;
@@ -120,6 +121,11 @@ void LoadCreativeNoClipConfig();
 std::wstring GetAntiDarknessMenuName();
 void SaveAntiDarknessConfig();
 void LoadAntiDarknessConfig();
+
+// AutoTool項目 (AutoToolItem.cpp)
+std::wstring GetAutoToolMenuName();
+void SaveAutoToolConfig();
+void LoadAutoToolConfig();
 
 // SchematicControl項目 (SchematicControlItem.cpp)
 std::wstring GetSchematicControlMenuName();

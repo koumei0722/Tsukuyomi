@@ -11,6 +11,8 @@ std::byte* g_addrCreativeNoClip = nullptr; // creativeNoClipのアドレス
 std::byte* g_addrAntiDarkness = nullptr; // AntiDarknessのアドレス
 std::byte* g_addrBuildBlock = nullptr; // buildBlockのアドレス
 std::byte* g_addrPlayerPositionUpdate = nullptr; // プレイヤー座標更新のアドレス
+std::byte* g_addrGetDestroySpeed = nullptr; // 採掘速度計算関数のアドレス。実装理由：AutoToolモジュールで採掘時間をフックしログ出力するため。
+std::byte* g_addrSetSelectedSlot = nullptr; // ホットバー選択スロット操作関数のアドレス。実装理由：AutoToolモジュール等で現在選択されているスロット(0~8)を追跡するため。
 
 bool PerformSignatureScans() {
     AddLog(L"[Tsukuyomi] Starting signature scans...");
@@ -85,6 +87,26 @@ bool PerformSignatureScans() {
         AddLog(L"[Error] Failed to find PlayerPositionUpdate signature.");
         return false;
     }
+    // 8. GetDestroySpeedのシグネチャスキャン
+    // 実装理由：ブロックの採掘時間/速度を計算する関数を特定し、フックして計算値をログ出力するため。
+    constexpr auto getDestroySpeedSig = hat::compile_signature<"48 8B C4 48 89 58 10 48 89 70 18 48 89 78 20 55 41 54 41 55 41 56 41 57 48 8D 68 A1 48 81 EC ? ? ? ? 0F 29 70 C8 0F 29 78 B8 48 8B F9 33 F6 44 8B E6">();
+    hat::scan_result GetDestroySpeedResult = hat::find_pattern(getDestroySpeedSig, ".text");
+    g_addrGetDestroySpeed = reinterpret_cast<std::byte*>(GetDestroySpeedResult.get());
+    if (!g_addrGetDestroySpeed) {
+        AddLog(L"[Error] Failed to find GetDestroySpeed signature.");
+        return false;
+    }
+
+    // 9. SetSelectedSlotのシグネチャスキャン
+    // 実装理由：ホットバーの選択スロット操作関数を特定し、選択スロットインデックス(0~8)を追跡するため。
+    constexpr auto setSelectedSlotSig = hat::compile_signature<"48 89 5C 24 18 55 56 57 41 54 41 55 41 56 41 57 48 8D AC 24 80 FD FF FF 48 81 EC 80 03 00 00 48 8B 05 ? ? ? ? 48 33 C4 48 89 85 70 02 00 00 44 8B F2">();
+    hat::scan_result SetSelectedSlotResult = hat::find_pattern(setSelectedSlotSig, ".text");
+    g_addrSetSelectedSlot = reinterpret_cast<std::byte*>(SetSelectedSlotResult.get());
+    if (!g_addrSetSelectedSlot) {
+        AddLog(L"[Error] Failed to find SetSelectedSlot signature.");
+        return false;
+    }
+
 
     AddLog(L"[Tsukuyomi] All signatures scanned successfully.");
     return true;
