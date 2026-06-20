@@ -22,8 +22,8 @@ HBRUSH g_hBlackBrush = NULL;
 
 WNDPROC g_fnOldLogProc = NULL;
 
-std::vector<int> g_openConsoleKeys = { 'Y' }; // 初期値は 'Y' キー
-std::vector<int> g_freeCameraKeys = { VK_F5 };  // デフォルトのFreeCameraトグルキー
+std::vector<int> g_openConsoleKeys = { VK_MENU, 'Y' }; // 初期値は ALT + Y キー。実装理由：コンソールを開くホットキーのデフォルト設定をALT+Yに変更するため。
+std::vector<int> g_freeCameraKeys = {};  // デフォルトのFreeCameraトグルキーはなし。実装理由：初期状態でキーバインドを未設定にするため。
 std::vector<int> g_fastBlockPlacementKeys = {};  // デフォルトのFastBlockPlacementトグルキー
 bool g_isWaitingForKeyBind = false;
 KeyBindTarget g_keyBindTarget = KeyBindTarget::Console;

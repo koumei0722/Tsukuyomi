@@ -18,8 +18,8 @@ bool PerformSignatureScans() {
     AddLog(L"[Tsukuyomi] Starting signature scans...");
 
     // 1. CameraUpdateのシグネチャスキャン
-    // 実装理由：ゲーム内のカメラ位置更新処理を乗っ取るフックおよびNOPパッチを適用するためのアドレス特定。
-    constexpr auto camsignature = hat::compile_signature<"48 83 EC 48 8B 01 4C 8D 44 24 20 89 42 40 8B 41 04 89 42 44 8B 41 08 89 42 48">();
+    // 実装理由：カメラの座標を書き換える命令（mov [rcx+...], eax）であり、同時にこの関数の先頭（プロローグのないリーフ関数）であるため、このアドレスをフック先として直接特定します。
+    constexpr auto camsignature = hat::compile_signature<"8B 42 40 89 41 40 8B 42 44 89 41 44 8B 42 48 89 41 48 8B 42 3C 89 41 3C">();
     hat::scan_result CamScanResult = hat::find_pattern(camsignature, ".text");
     g_addrCameraUpdate = reinterpret_cast<std::byte*>(CamScanResult.get());
     if (!g_addrCameraUpdate) {

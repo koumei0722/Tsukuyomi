@@ -87,9 +87,15 @@ static int getPacketId(void* packet) {
 // 実装理由：フリーカメラ有効時のみ、ゲーム内カメラの座標更新処理を割り込み、独自の自由移動座標を反映するため。
 // また、AutoTool有効時、左クリックが離されたこと（採掘終了）を毎フレーム検知して、即座に元のスロットへ復元するため。
 static void __fastcall hk_CameraUpdate(void* rcx, void* rdx, void* r8) {
+    // 1. オリジナルのカメラ更新処理を実行します。
+    // 実装理由：視点の向き（Pitch/Yawなど）の更新処理を含む、座標以外のすべてのカメラ制御を正常に動作させるため。
     OrigCameraUpdate(rcx, rdx, r8);
+
+    // 2. FreeCameraが有効な場合、オリジナルの処理によって上書きされた座標を独自の座標で即座に書き戻します。
+    // ※X座標はフック競合回避のためNOP化していませんが、呼び出し直後に書き戻すことで描画のチラつきを防ぎます。
+    // 実装理由：フック破損によるクラッシュを防ぎつつ、視点変更とフリーカメラ座標の維持を安全に両立させるため。
     if (GetFreeCameraEnabled()) {
-        UpdateFreeCameraPosition(rdx);
+        UpdateFreeCameraPosition(rcx);
     }
 
     if (GetAutoToolEnabled() && g_originalSlot != -1) {

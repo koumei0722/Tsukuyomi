@@ -8,13 +8,14 @@
 static float g_camX = 0.0f;
 static float g_camY = 0.0f;
 static float g_camZ = 0.0f;
-static float g_speed = 0.015625f; // デフォルト移動速度
+static float g_speed = 0.0625f; // デフォルト移動速度。実装理由：初期設定値を0.0625fに変更するため。
 static PlayerView* g_playerView = nullptr;
 
 static bool g_initialized = false;
 static bool g_enabled = false;
 
-static std::byte g_originalBytes[15];
+
+static std::byte g_originalBytes[24]; // 実装理由：新しいシグネチャ（24バイト）全体のオリジナルデータを保持・復元するため。
 static bool g_originalBytesSaved = false;
 extern HWND g_hMainWnd; // console.cpp で定義されているコンソールウィンドウのハンドル
 
@@ -46,28 +47,32 @@ void SetFreeCameraEnabled(bool enabled) {
     if (!g_addrCameraUpdate) return;
 
     DWORD oldProtect;
-    // CameraUpdate関数のオフセット11バイト目から15バイト分のメモリ領域の保護を変更し、書き換えを可能にします。
-    // 実装理由：ゲーム内のカメラ位置更新処理の一部をNOPで無効化し、独自座標での描画を可能にするため。
-    VirtualProtect(g_addrCameraUpdate + 11, 15, PAGE_EXECUTE_READWRITE, &oldProtect);
+    // カメラ座標更新の対象アドレス（24バイト）のメモリ保護を書き込み可能に変更します。
+    // 実装理由：FreeCameraのON/OFFに合わせて、カメラのY・Z座標を上書きするゲーム側の命令（mov [rcx+...], eax）をNOP化または復元するため。
+    VirtualProtect(g_addrCameraUpdate, 24, PAGE_EXECUTE_READWRITE, &oldProtect);
 
     // 元のバイト列の保存（初回の無効化時のみ実行）
     if (!g_originalBytesSaved) {
-        memcpy(g_originalBytes, g_addrCameraUpdate + 11, 15);
+        memcpy(g_originalBytes, g_addrCameraUpdate, 24);
         g_originalBytesSaved = true;
     }
 
     if (enabled) {
-        // カメラ座標がプレイヤー座標に引き戻される命令を NOP (0x90) で無効化します
-        memset(g_addrCameraUpdate + 11, 0x90, 15);
+        // Y座標（10~12byte目：+9から3バイト）およびZ座標（16~18byte目：+15から3バイト）を上書きする命令を NOP (0x90) で無効化します。
+        // ※X座標（4~6byte目：+3から3バイト）はフックのジャンプ命令（5バイト）と衝突するため、パッチは行わずフックハンドラ内の強制書き戻しで対処します。
+        // 実装理由：ゲーム本体によるカメラ座標の引き戻しを防止しつつ、フック破損のクラッシュを防ぐため。
+        memset(g_addrCameraUpdate + 9, 0x90, 3);
+        memset(g_addrCameraUpdate + 15, 0x90, 3);
         g_initialized = false;
         g_enabled = true;
     } else {
         g_enabled = false;
-        // 元のバイト列を復元します
-        memcpy(g_addrCameraUpdate + 11, g_originalBytes, 15);
+        // 元のバイト列（24バイト全体）を復元します。
+        // 実装理由：FreeCamera無効時に、ゲーム本来のカメラ位置更新処理を正常に復旧させるため。
+        memcpy(g_addrCameraUpdate, g_originalBytes, 24);
     }
     
-    VirtualProtect(g_addrCameraUpdate + 11, 15, oldProtect, &oldProtect);
+    VirtualProtect(g_addrCameraUpdate, 24, oldProtect, &oldProtect);
 }
 
 void SetPlayerViewPtr(PlayerView* viewPtr) {
